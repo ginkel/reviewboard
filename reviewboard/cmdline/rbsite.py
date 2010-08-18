@@ -380,7 +380,7 @@ class Site(object):
             else:
                 shutil.rmtree(dest_dir)
 
-        if options.copy_media:
+        if not options is None and options.copy_media:
             shutil.copytree(src_dir, dest_dir)
         else:
             os.symlink(src_dir, dest_dir)

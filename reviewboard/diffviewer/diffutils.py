@@ -104,7 +104,7 @@ def patch(diff, file, filename):
 
     # XXX: catch exception if Popen fails?
     newfile = '%s-new' % oldfile
-    p = subprocess.Popen(['patch', '-o', newfile, oldfile],
+    p = subprocess.Popen(['patch', '-f', '-o', newfile, oldfile],
                          stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                          stderr=subprocess.STDOUT)
     p.stdin.write(diff)

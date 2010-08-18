@@ -74,6 +74,8 @@ class GeneralSettingsForm(SiteSettingsForm):
             ("ad",      _("Active Directory")),
             ("ldap",    _("LDAP")),
             ("nis",     _("NIS")),
+            ("x509",    _("X.509 Public Key")),
+            ("x509ad",  _("X.509 Public Key + Active Directory")),
             ("custom",  _("Custom"))
         ),
         help_text=_("The method Review Board should use for authenticating "
@@ -178,6 +180,47 @@ class GeneralSettingsForm(SiteSettingsForm):
     auth_ad_recursion_depth = forms.IntegerField(
         label=_("Recursion Depth"),
         help_text=_("Depth to recurse when checking group membership. 0 to turn off, -1 for unlimited."),
+        required=False)
+
+    auth_x509_username_field = forms.ChoiceField(
+        label=_("Username Field"),
+        choices=(
+            # Note: These names correspond to environment variables set by
+            #       mod_ssl.
+            ("SSL_CLIENT_S_DN",        _("DN (Distinguished Name)")),
+            ("SSL_CLIENT_S_DN_CN",     _("CN (Common Name)")),
+            ("SSL_CLIENT_S_DN_Email",  _("Email address")),
+        ),
+        help_text=_("The field from which the Review Board username will be "
+                    "extracted."),
+        required=True)
+
+    auth_x509_username_regex = forms.CharField(
+        label=_("Username Regex"),
+        help_text=_("Optional regex used to convert the selected X.509 "
+                    "certificate field to a usable Review Board username. For "
+                    "example, if using the email field to retrieve the "
+                    "username, use this regex to get the username from an "
+                    "email address: '(\s+)@yoursite.com'. There must be only "
+                    "one group in the regex."),
+        required=False)
+
+    auth_x509_autocreate_users = forms.BooleanField(
+        label=_("Automatically create new user accounts."),
+        help_text=_("Enabling this option will cause new user accounts to be "
+                    "automatically created when a new user with an X.509 "
+                    "certificate accesses Review Board."),
+        required=False)
+        
+    auth_x509ad_service_user = forms.CharField(
+        label=_("Active Directory Service User"),
+        help_text=_("Specifies the Active Directory service user."),
+        required=True)
+
+    auth_x509ad_service_passwd = forms.CharField(
+        label=_("Active Directory Service User"),
+        widget=forms.PasswordInput,
+        help_text=_("The optional password for the Active Directory service user."),
         required=False)
 
     custom_backends = forms.CharField(
@@ -287,6 +330,12 @@ class GeneralSettingsForm(SiteSettingsForm):
             if auth_backend != "ad":
                 set_fieldset_required("auth_ad", False)
 
+            if auth_backend != 'x509':
+                set_fieldset_required("auth_x509", False)
+
+            if auth_backend != 'x509ad':
+                set_fieldset_required("auth_x509ad", False)
+
             if auth_backend != "custom":
                 set_fieldset_required("auth_custom", False)
 
@@ -354,6 +403,33 @@ class GeneralSettingsForm(SiteSettingsForm):
                             'auth_ad_group_name',
                             'auth_ad_search_root',
                             'auth_ad_recursion_depth',
+                            ),
+            },
+            {
+                'id':      'auth_x509',
+                'classes': ('wide', 'hidden'),
+                'title':   _("X.509 Client Certificate Authentication Settings"),
+                'fields':  ('auth_x509_username_field',
+                            'auth_x509_username_regex',
+                            'auth_x509_autocreate_users',
+                            ),
+            },
+            {
+                'id':      'auth_x509ad',
+                'classes': ('wide', 'hidden'),
+                'title':   _("X.509 Client Certificate + Active Directory Authentication Settings"),
+                'fields':  ('auth_x509_username_field',
+                            'auth_x509_username_regex',
+                            'auth_ad_domain_name',
+                            'auth_ad_use_tls',
+                            'auth_ad_find_dc_from_dns',
+                            'auth_ad_domain_controller',
+                            'auth_ad_ou_name',
+                            'auth_ad_group_name',
+                            'auth_ad_search_root',
+                            'auth_ad_recursion_depth',
+                            'auth_x509ad_service_user',
+                            'auth_x509ad_service_passwd',
                             ),
             },
             {
