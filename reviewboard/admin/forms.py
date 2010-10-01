@@ -523,6 +523,7 @@ class AuthenticationSettingsForm(SiteSettingsForm):
                 'title':   _("X.509 Client Certificate + Active Directory Authentication Settings"),
                 'fields':  ('auth_x509_username_field',
                             'auth_x509_username_regex',
+                            'auth_x509_autocreate_users',
                             'auth_ad_domain_name',
                             'auth_ad_use_tls',
                             'auth_ad_find_dc_from_dns',
