@@ -168,6 +168,7 @@ class AuthenticationSettingsForm(SiteSettingsForm):
             ("ldap",    _("LDAP")),
             ("nis",     _("NIS")),
             ("x509",    _("X.509 Public Key")),
+            ("x509ad",  _("X.509 Public Key + Active Directory")),
             ("custom",  _("Custom"))
         ),
         help_text=_("The method Review Board should use for authenticating "
@@ -327,6 +328,17 @@ class AuthenticationSettingsForm(SiteSettingsForm):
                     "certificate accesses Review Board."),
         required=False)
 
+    auth_x509ad_service_user = forms.CharField(
+        label=_("Active Directory Service User"),
+        help_text=_("Specifies the Active Directory service user."),
+        required=True)
+
+    auth_x509ad_service_passwd = forms.CharField(
+        label=_("Active Directory Service User"),
+        widget=forms.PasswordInput,
+        help_text=_("The optional password for the Active Directory service user."),
+        required=False)
+
     custom_backends = forms.CharField(
         label=_("Backends"),
         help_text=_("A comma-separated list of custom auth backends. These "
@@ -434,6 +446,9 @@ class AuthenticationSettingsForm(SiteSettingsForm):
             if auth_backend != 'x509':
                 set_fieldset_required("auth_x509", False)
 
+            if auth_backend != 'x509ad':
+                set_fieldset_required("auth_x509ad", False)
+
             if auth_backend != "custom":
                 set_fieldset_required("auth_custom", False)
 
@@ -496,10 +511,28 @@ class AuthenticationSettingsForm(SiteSettingsForm):
             {
                 'id':      'auth_x509',
                 'classes': ('wide', 'hidden'),
-                'title':   _("X.509 Client Certificate Authentication settings"),
+                'title':   _("X.509 Client Certificate Authentication Settings"),
                 'fields':  ('auth_x509_username_field',
                             'auth_x509_username_regex',
                             'auth_x509_autocreate_users',
+                            ),
+            },
+            {
+                'id':      'auth_x509ad',
+                'classes': ('wide', 'hidden'),
+                'title':   _("X.509 Client Certificate + Active Directory Authentication Settings"),
+                'fields':  ('auth_x509_username_field',
+                            'auth_x509_username_regex',
+                            'auth_ad_domain_name',
+                            'auth_ad_use_tls',
+                            'auth_ad_find_dc_from_dns',
+                            'auth_ad_domain_controller',
+                            'auth_ad_ou_name',
+                            'auth_ad_group_name',
+                            'auth_ad_search_root',
+                            'auth_ad_recursion_depth',
+                            'auth_x509ad_service_user',
+                            'auth_x509ad_service_passwd',
                             ),
             },
             {

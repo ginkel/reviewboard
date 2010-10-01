@@ -389,3 +389,91 @@ class X509Backend(object):
 
     def get_user(self, user_id):
         return get_object_or_none(User, pk=user_id)
+
+
+class X509ActiveDirectoryBackend(ActiveDirectoryBackend):
+    """
+    Authenticate a user from an X.509 certificate passed in by the browser and fetch any
+    additional account details from the Active Directory. This backend relies on the
+    X509AuthMiddleware to extract a username field from the client certificate.
+    """
+    def clean_username(self, username):
+        if settings.X509_USERNAME_REGEX:
+            try:
+                m = re.match(settings.X509_USERNAME_REGEX, username)
+                if m:
+                    username = m.group(1)
+                else:
+                    logging.warning("X509ActiveDirectoryBackend: username '%s' didn't match "
+                            "regex." % username)
+            except sre_constants.error, e:
+                logging.error("X509ActiveDirectoryBackend: Invalid regex specified: %s" %
+                        str(e))
+
+        # the sap.corp LDAP is kind of picky regarding the user name capitalization
+        return username.lower().strip()
+
+    def authenticate(self, username = None, password = None, x509_field = None):
+        import ldap
+
+        if x509_field:
+            username = self.clean_username(x509_field)
+            required_group = settings.AD_GROUP_NAME
+
+            connections = self.get_ldap_connections()
+
+            for con in connections:
+                try:
+                    con.simple_bind_s(settings.X509AD_SERVICE_USER, settings.X509AD_SERVICE_PASSWD)
+                    user_data = self.search_ad(con, '(&(objectClass=user)(sAMAccountName=%s))' % username)
+                    if required_group:
+                        try:
+                            group_names = self.get_member_of(con, user_data)
+                        except Exception, e:
+                            logging.error("X.509 Active Directory error: failed getting groups for user %s" % username)
+                            return None
+                        if not required_group in group_names:
+                            logging.warning("X.509 Active Directory: User %s is not in required group %s" % (username, required_group))
+                            return None
+    
+                    return self.get_or_create_user(username, user_data)
+                except ldap.SERVER_DOWN:
+                    logging.warning('X.509 Active Directory: Domain controller is down')
+                    continue
+                except ldap.INVALID_CREDENTIALS:
+                    logging.warning('X.509 Active Directory: Failed login for user %s' % username)
+                    return None
+    
+            logging.error('X.509 Active Directory error: Could not contact any domain controller servers')
+            return None
+        else:
+            connections = self.get_ldap_connections()
+    
+            username = username.strip()
+            required_group = settings.AD_GROUP_NAME
+    
+            for con in connections:
+                try:
+                    bind_username ='%s@%s' % (username, self.get_domain_name())
+                    con.simple_bind_s(bind_username, password)
+                    user_data = self.search_ad(con, '(&(objectClass=user)(sAMAccountName=%s))' % username)
+                    if required_group:
+                        try:
+                            group_names = self.get_member_of(con, user_data)
+                        except Exception, e:
+                            logging.error("Active Directory error: failed getting groups for user %s" % username)
+                            return None
+                        if not required_group in group_names:
+                            logging.warning("Active Directory: User %s is not in required group %s" % (username, required_group))
+                            return None
+    
+                    return self.get_or_create_user(username, user_data)
+                except ldap.SERVER_DOWN:
+                    logging.warning('Active Directory: Domain controller is down')
+                    continue
+                except ldap.INVALID_CREDENTIALS:
+                    logging.warning('Active Directory: Failed login for user %s' % username)
+                    return None
+    
+            logging.error('Active Directory error: Could not contact any domain controller servers')
+            return None
