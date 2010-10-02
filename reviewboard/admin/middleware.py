@@ -59,7 +59,7 @@ class X509AuthMiddleware(object):
     with a username and password.
     """
     def process_request(self, request):
-        if auth_backend_map['x509'] not in settings.AUTHENTICATION_BACKENDS:
+        if auth_backend_map['x509'] not in settings.AUTHENTICATION_BACKENDS and auth_backend_map['x509ad'] not in settings.AUTHENTICATION_BACKENDS:
             return None
 
         if not request.is_secure():
