@@ -1,9 +1,3 @@
-'''
-Created on May 5, 2009
-
-@author: D044539
-'''
-
 import base64
 import datetime
 import urllib
@@ -208,12 +202,6 @@ class DtrWorkingResource(DtrBaseVersionedResource):
 
 
 class DtrBaseClient(object):
-    def __init__(self):
-        self.conn = None
-        self.server = DTR_SERVER
-        self.user = "anzeiger"
-        self.password = "display"
-
     def __init__(self, server, user, password):
         self.conn = None
         self.server = server

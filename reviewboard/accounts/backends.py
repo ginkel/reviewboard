@@ -410,7 +410,7 @@ class X509ActiveDirectoryBackend(ActiveDirectoryBackend):
                 logging.error("X509ActiveDirectoryBackend: Invalid regex specified: %s" %
                         str(e))
 
-        # the sap.corp LDAP is kind of picky regarding the user name capitalization
+        # the lDAP is kind of picky regarding the user name capitalization
         return username.lower().strip()
 
     def authenticate(self, username = None, password = None, x509_field = None):
